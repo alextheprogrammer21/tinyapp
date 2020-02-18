@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/alextheprogrammer21/tinyapp#readme",
   "dependencies": {
+    "ejs": "^3.0.1",
+    "ejs-lint": "^1.0.1",
     "express": "^4.17.1"
   }
 }
