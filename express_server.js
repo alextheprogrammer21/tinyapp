@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const {getUserByEmail, generateRandomString} = require('./helpers');
 
 const users = {
   "userID": {
@@ -40,14 +41,14 @@ app.get('/', (req, res) => {
 });
 
 app.get('/test', (req, res) => {
-  res.send(req.session.userid);
+  console.log(getUserByEmail('test@gmail.com', users, IDbyEmail));
+  res.send("test");
 });
 
 ///GET /URLS
 app.get("/urls/new", (req, res) => {
 
   let idkey = req.session.userid;
-  console.log(idkey)
   if (users[idkey]) {
 
     let templateVars = { username: users[idkey] };
@@ -164,9 +165,3 @@ app.post('/login', (req,res) => {
 app.listen(PORT, () => {
   console.log("Listening on port", PORT);
 });
-
-
-//MISC FUNCTIONS
-function generateRandomString() {
-  return (Math.random().toString(36).substring(2, 15)).slice(0,6);
-}
