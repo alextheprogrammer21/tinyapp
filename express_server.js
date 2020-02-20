@@ -13,8 +13,8 @@ const users = {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const IDbyEmail = {};
@@ -35,9 +35,16 @@ app.get('/', (req, res) => {
 
 ///GET /URLS
 app.get("/urls/new", (req, res) => {
+
   let idkey = req.cookies["userid"];
-  let templateVars = { username: users[idkey] };
-  res.render("urls_new", templateVars);
+  if (users[idkey]) {
+
+    let templateVars = { username: users[idkey] };
+    res.render("urls_new", templateVars);
+
+  } else {
+      res.redirect('/login');
+  }
 });
 
 app.get('/urls.json', (req,res) => {
@@ -45,22 +52,21 @@ app.get('/urls.json', (req,res) => {
 });
 
 app.get("/urls", (req, res) => {
-  console.log(req.cookie);
   let idkey = req.cookies["userid"];
-  let templateVars = { urls: urlDatabase, username: users[idkey] };
+  let templateVars = { urls: urlDatabase, username: users[idkey], idkey: idkey };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   shortURL = req.params.shortURL;
   let idkey = req.cookies["userid"];
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL], username: users[idkey] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL].longURL, username: users[idkey] };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  const website = urlDatabase[req.params.shortURL].longURL;
+  res.status(301).redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
 
@@ -79,22 +85,28 @@ app.get('/login', (req, res) => {
 //******************* POSTS  *******************************/
 //POST URLS
 app.post('/urls/:shortURL/update', (req,res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  let idkey = req.cookies["userid"];
+  
+  if (users[idkey]) {
+  urlDatabase[req.params.shortURL.longURL] = req.body.longURL;
+  }
   res.redirect('/urls');
 });
 
 app.post('/urls', (req, res) => {
-  console.log(req.body);
-  console.log(req.body['longURL']);
+  let idkey = req.cookies["userid"];
   shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body['longURL'];
+  urlDatabase[shortURL] = { longURL: req.body['longURL'], userID: idkey };
   res.redirect(`/urls/${shortURL}`);
   res.send("Ok");
 });
 
 app.post('/urls/:shortURL/delete', (req,res) => {
-  console.log(req.params);
+  let idkey = req.cookies["userid"];
+  
+  if (users[idkey]) {
   delete urlDatabase[req.params.shortURL];
+  }
   res.redirect('/urls');
 });
 
@@ -127,7 +139,6 @@ app.post('/login', (req,res) => {
     res.cookie('userid', id);
     res.redirect('/urls');
   }
-  res.response(403);
   res.send("403: Incorrect email or password");
 });
 
