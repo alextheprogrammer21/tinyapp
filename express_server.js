@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-
+const bcrypt = require('bcrypt');
 const users = {
   "userID": {
     id:"userID",
@@ -17,9 +17,9 @@ const urlDatabase = {
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
-const IDbyEmail = {};
-
-const registeredEmails = {};
+let IDbyEmail = {};
+let emailByPassword = {};
+let registeredEmails = {};
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -124,7 +124,9 @@ app.post('/register', (req, res) => {
     res.send("Error 400: this email already exists");
   }
   id = generateRandomString(); users[id] = {}; user = users[id]; user.id = id; registeredEmails[req.body.email] = true; IDbyEmail[req.body.email] = id;
-  user.email = req.body.email; user.password = req.body.password;
+  let password = req.body.password; const hashedpassword = bcrypt.hashSync(password, 10);
+  user.email = req.body.email; user.password = hashedpassword;
+  emailByPassword[req.body.email] = hashedpassword;
   res.cookie('userid', id);
   res.redirect('/urls');
 });
@@ -135,7 +137,10 @@ app.post('/logout', (req,res) => {
 });
 
 app.post('/login', (req,res) => {
-  if (registeredEmails[req.body.email] && IDbyEmail[req.body.email]) {
+  let email = req.body.email;
+  let pass = req.body.password;
+  let hashedpassword = emailByPassword[email]
+  if (registeredEmails[email] && bcrypt.compareSync(pass, hashedpassword)) {
     res.cookie('userid', id);
     res.redirect('/urls');
   }
@@ -151,5 +156,5 @@ app.listen(PORT, () => {
 
 //MISC FUNCTIONS
 function generateRandomString() {
-  return (Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)).slice(0,6);
+  return (Math.random().toString(36).substring(2, 15)).slice(0,6);
 }
