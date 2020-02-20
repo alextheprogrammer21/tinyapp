@@ -13,22 +13,16 @@
 
 
     <% if(username){ %>
-
-      <h5><%=username%></h5>
+      <label>Logged in as: </label>
+      <h5><%=username.email%></h5>
       <form method="POST" action="/logout">
         <button type="submit" class="btn btn-primary">Logout</button>
       </form>
       
       <% } else{ %>  
         
-        <<form class="form-inline" action="/login" method="POST">
-          <div class="form-group mb-2">
-            <label for="username">enter your username:</label>
-            <label for="username"><%=username%>:</label>
-            <input class="form-control" type="text" name="username" placeholder="username" style="width: 300px; margin: 1em">
-            <button type="submit" class="btn btn-primary">Login</button>
-          </div>
-        </form>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
 
    <% } %>
 
