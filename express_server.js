@@ -4,6 +4,8 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session');
+
 const users = {
   "userID": {
     id:"userID",
@@ -21,10 +23,15 @@ let IDbyEmail = {};
 let emailByPassword = {};
 let registeredEmails = {};
 
+
+//********************** MIDDLEWEAR   ********************/
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
-
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
 
 //******************* GETS  *******************************/
@@ -32,11 +39,15 @@ app.get('/', (req, res) => {
   res.redirect('/register');
 });
 
+app.get('/test', (req, res) => {
+  res.send(req.session.userid);
+});
 
 ///GET /URLS
 app.get("/urls/new", (req, res) => {
 
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
+  console.log(idkey)
   if (users[idkey]) {
 
     let templateVars = { username: users[idkey] };
@@ -52,14 +63,14 @@ app.get('/urls.json', (req,res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   let templateVars = { urls: urlDatabase, username: users[idkey], idkey: idkey };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   shortURL = req.params.shortURL;
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL].longURL, username: users[idkey] };
   res.render("urls_show", templateVars);
 });
@@ -72,20 +83,20 @@ app.get("/u/:shortURL", (req, res) => {
 
 //GET /REGISTERS AND LOGINS
 app.get('/register', (req, res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   let templateVars = { username: users[idkey] };
   res.render("register",templateVars);
 });
 
 app.get('/login', (req, res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   let templateVars = { username: users[idkey] };
   res.render("login",templateVars);
 })
 //******************* POSTS  *******************************/
 //POST URLS
 app.post('/urls/:shortURL/update', (req,res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   
   if (users[idkey]) {
   urlDatabase[req.params.shortURL.longURL] = req.body.longURL;
@@ -94,7 +105,7 @@ app.post('/urls/:shortURL/update', (req,res) => {
 });
 
 app.post('/urls', (req, res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body['longURL'], userID: idkey };
   res.redirect(`/urls/${shortURL}`);
@@ -102,7 +113,7 @@ app.post('/urls', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req,res) => {
-  let idkey = req.cookies["userid"];
+  let idkey = req.session.userid;
   
   if (users[idkey]) {
   delete urlDatabase[req.params.shortURL];
@@ -127,12 +138,13 @@ app.post('/register', (req, res) => {
   let password = req.body.password; const hashedpassword = bcrypt.hashSync(password, 10);
   user.email = req.body.email; user.password = hashedpassword;
   emailByPassword[req.body.email] = hashedpassword;
-  res.cookie('userid', id);
+  req.session.userid = id; 
+  // res.cookie('userid', id);
   res.redirect('/urls');
 });
 
 app.post('/logout', (req,res) => {
-  res.clearCookie('userid');
+  req.session.userid = null;
   res.redirect('/urls');
 });
 
@@ -141,7 +153,7 @@ app.post('/login', (req,res) => {
   let pass = req.body.password;
   let hashedpassword = emailByPassword[email]
   if (registeredEmails[email] && bcrypt.compareSync(pass, hashedpassword)) {
-    res.cookie('userid', id);
+    req.session.userid = id; //SMALL BUG?!?!?! BOOKMARKED
     res.redirect('/urls');
   }
   res.send("403: Incorrect email or password");
