@@ -100,7 +100,10 @@ app.post('/urls/:shortURL/update', (req,res) => {
   let idkey = req.session.userid;
   
   if (users[idkey]) {
-  urlDatabase[req.params.shortURL.longURL] = req.body.longURL;
+    console.log(req.params);
+    console.log(req.body.longURL);
+    console.log(urlDatabase);
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   }
   res.redirect('/urls');
 });
