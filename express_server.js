@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const methodOverride = require('method-override');
 const {getUserByEmail, generateRandomString} = require('./helpers');
 
 const users = {
@@ -33,16 +34,12 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }));
+app.use(methodOverride('_method'));
 
 
 //******************* GETS  *******************************/
 app.get('/', (req, res) => {
   res.redirect('/register');
-});
-
-app.get('/test', (req, res) => {
-  console.log(getUserByEmail('test@gmail.com', users, IDbyEmail));
-  res.send("test");
 });
 
 ///GET /URLS
@@ -57,10 +54,6 @@ app.get("/urls/new", (req, res) => {
   } else {
     res.redirect('/login');
   }
-});
-
-app.get('/urls.json', (req,res) => {
-  res.json(urlDatabase);
 });
 
 app.get("/urls", (req, res) => {
@@ -110,37 +103,6 @@ app.get('/login', (req, res) => {
   res.render("login",templateVars);
 });
 //******************* POSTS  *******************************/
-//POST URLS
-app.post('/urls/:shortURL/update', (req,res) => {
-  let idkey = req.session.userid;
-  
-  if (users[idkey]) {
-    console.log(req.params);
-    console.log(req.body.longURL);
-    console.log(urlDatabase);
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  }
-  res.redirect('/urls');
-});
-
-app.post('/urls', (req, res) => {
-  let idkey = req.session.userid;
-  shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body['longURL'], userID: idkey };
-  res.redirect(`/urls/${shortURL}`);
-  res.send("Ok");
-});
-
-app.post('/urls/:shortURL/delete', (req,res) => {
-  let idkey = req.session.userid;
-  
-  if (users[idkey]) {
-    delete urlDatabase[req.params.shortURL];
-  }
-  res.redirect('/urls');
-});
-
-
 //POST LOGINS AND REGISTERS
 app.post('/register', (req, res) => {
   let idkey = req.session.userid;
@@ -181,6 +143,38 @@ app.post('/login', (req,res) => {
   res.render("Errors", templateVars);
 });
 
+//******************* PUTS  *******************************/
+
+app.put('/urls', (req, res) => {
+  let idkey = req.session.userid;
+  shortURL = generateRandomString();
+  urlDatabase[shortURL] = { longURL: req.body['longURL'], userID: idkey };
+  res.redirect(`/urls/${shortURL}`);
+  res.send("Ok");
+});
+
+app.put('/urls/:shortURL', (req,res) => {
+  let idkey = req.session.userid;
+  
+  if (users[idkey]) {
+    console.log(req.params);
+    console.log(req.body.longURL);
+    console.log(urlDatabase);
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+  }
+  res.redirect('/urls');
+});
+
+//******************* DELETES  *******************************/
+
+app.del('/urls/:shortURL', (req,res) => {
+  let idkey = req.session.userid;
+  
+  if (users[idkey]) {
+    delete urlDatabase[req.params.shortURL];
+  }
+  res.redirect('/urls');
+});
 
 //LISTEN
 app.listen(PORT, () => {
