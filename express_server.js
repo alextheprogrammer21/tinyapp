@@ -88,7 +88,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const website = urlDatabase[req.params.shortURL].longURL;
-  res.status(301).redirect(urlDatabase[req.params.shortURL].longURL);
+  let prefix = 'http://';
+  let url = urlDatabase[req.params.shortURL].longURL;
+  if (url[0] == 'h' && url[1] == 't' && url[2] == 't' && url[3] =='p') {
+    res.status(301).redirect(url);
+  }
+  res.status(301).redirect(prefix+url);
 });
 
 
