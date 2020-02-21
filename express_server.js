@@ -55,7 +55,7 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
 
   } else {
-      res.redirect('/login');
+    res.redirect('/login');
   }
 });
 
@@ -66,14 +66,24 @@ app.get('/urls.json', (req,res) => {
 app.get("/urls", (req, res) => {
   let idkey = req.session.userid;
   let templateVars = { urls: urlDatabase, username: users[idkey], idkey: idkey };
-  res.render("urls_index", templateVars);
+  if (users[idkey]) {
+    res.render("urls_index", templateVars);
+  } else {
+    let templateVars = { ErrorMessage: "Please login at /login to create urls", username: users[idkey] };
+    res.render("Errors", templateVars);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   shortURL = req.params.shortURL;
   let idkey = req.session.userid;
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL].longURL, username: users[idkey] };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[shortURL].userID == idkey) { 
+    let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL].longURL, username: users[idkey] };
+    res.render("urls_show", templateVars);
+  } else {
+    let templateVars = { ErrorMessage: "Please login at /login with the email that created this shortURL", username: users[idkey] };
+    res.render("Errors", templateVars);
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -93,7 +103,7 @@ app.get('/login', (req, res) => {
   let idkey = req.session.userid;
   let templateVars = { username: users[idkey] };
   res.render("login",templateVars);
-})
+});
 //******************* POSTS  *******************************/
 //POST URLS
 app.post('/urls/:shortURL/update', (req,res) => {
@@ -103,7 +113,7 @@ app.post('/urls/:shortURL/update', (req,res) => {
     console.log(req.params);
     console.log(req.body.longURL);
     console.log(urlDatabase);
-  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   }
   res.redirect('/urls');
 });
@@ -120,7 +130,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   let idkey = req.session.userid;
   
   if (users[idkey]) {
-  delete urlDatabase[req.params.shortURL];
+    delete urlDatabase[req.params.shortURL];
   }
   res.redirect('/urls');
 });
@@ -128,39 +138,42 @@ app.post('/urls/:shortURL/delete', (req,res) => {
 
 //POST LOGINS AND REGISTERS
 app.post('/register', (req, res) => {
-  
+  let idkey = req.session.userid;
   if (!req.body.email || !req.body.password) {
     res.status(400);
-    res.send('Error 400: email and password cannot be empty');
+    let templateVars = { ErrorMessage: "Error 400: Email and password cannot be empty", username: users[idkey] };
+    res.render("Errors", templateVars);
   }
 
   if (registeredEmails[req.body.email]) {
-    res.status(400);
-    res.send("Error 400: this email already exists");
+    let templateVars = { ErrorMessage: "Error 400: this email already exists", username: users[idkey] };
+    res.render("Errors", templateVars);
   }
+  
   id = generateRandomString(); users[id] = {}; user = users[id]; user.id = id; registeredEmails[req.body.email] = true; IDbyEmail[req.body.email] = id;
   let password = req.body.password; const hashedpassword = bcrypt.hashSync(password, 10);
   user.email = req.body.email; user.password = hashedpassword;
   emailByPassword[req.body.email] = hashedpassword;
-  req.session.userid = id; 
-  // res.cookie('userid', id);
+  req.session.userid = id;
   res.redirect('/urls');
 });
 
 app.post('/logout', (req,res) => {
-  req.session.userid = null;
+  req.session.userid = null;  
   res.redirect('/urls');
 });
 
 app.post('/login', (req,res) => {
+  let idkey = req.session.userid;
   let email = req.body.email;
   let pass = req.body.password;
-  let hashedpassword = emailByPassword[email]
+  let hashedpassword = emailByPassword[email];
   if (registeredEmails[email] && bcrypt.compareSync(pass, hashedpassword)) {
-    req.session.userid = id; //SMALL BUG?!?!?! BOOKMARKED
+    req.session.userid = IDbyEmail[email];
     res.redirect('/urls');
   }
-  res.send("403: Incorrect email or password");
+  let templateVars = { ErrorMessage: "Incorrect email or password", username: users[idkey] };
+  res.render("Errors", templateVars);
 });
 
 
