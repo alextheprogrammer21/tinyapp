@@ -177,6 +177,5 @@ app.del('/urls/:shortURL', (req,res) => {
 });
 
 //LISTEN
-app.listen(PORT, () => {
-  console.log("Listening on port", PORT);
-});
+app.listen(process.env.PORT || 8080, 
+	() => console.log("Server is running on port 8080"));
